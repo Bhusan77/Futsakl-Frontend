@@ -5,8 +5,6 @@ import axios from "axios";
 import Loader from "../components/Loader/Loader";
 import Swal from 'sweetalert2'
 
-const { TabPane } = Tabs;
-
 const Admin = () => {
     const user = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -14,29 +12,22 @@ const Admin = () => {
         if (!user.isAdmin) {
             window.location.href = "/home"
         }
-    }, [])
+    }, [user.isAdmin])
+
+    // Build items array for Tabs
+    const items = [
+        { key: "1", label: "Users", children: <Users /> },
+        { key: "2", label: "Booking", children: <Bookings /> },
+        { key: "3", label: "Courts", children: <Courts /> },
+        { key: "4", label: "Add Court", children: <AddCourt /> },
+        { key: "5", label: "Update Court", children: <UpdateCourt /> }
+    ];
 
     return (
         <div className="mt-3 mtl-3 mr-3 bs">
             <div className="admin-section">
                 <h1 className="admin-text">Booking.Football Management</h1>
-                <Tabs defaultActiveKey="3">
-                    <TabPane tab="Users" key="1">
-                        <Users />
-                    </TabPane>
-                    <TabPane tab="Booking" key="2">
-                        <Bookings />
-                    </TabPane>
-                    <TabPane tab="Courts" key="3">
-                        <Courts />
-                    </TabPane>
-                    <TabPane tab="Add Court" key="4">
-                        <AddCourt />
-                    </TabPane>
-                    <TabPane tab="Update Court" key="5">
-                        <UpdateCourt />
-                    </TabPane>
-                </Tabs>
+                <Tabs defaultActiveKey="3" items={items} />
             </div>
         </div>
     );
@@ -57,7 +48,7 @@ export function Users() {
             try {
                 setIsLoading(true);
                 const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users/getAllUsers`);
-                setUsers(response.data);
+                setUsers(response.data || []);
                 setIsLoading(false);
             } catch (error) {
                 console.error(error);
@@ -71,8 +62,14 @@ export function Users() {
     return (
         <div className="row">
             <div className="col-md">
-                {isLoading ? <h1 className="text-header"><Loader /></h1> : (users.length <= 0 ? <h1 className="text-header">There is no user</h1> : <h1 className="text-header"> {users.length} Users Loaded </h1>)}
-                <div div className="table-responsive" >
+                {isLoading ?
+                    <span className="text-header"><Loader /></span>
+                    : (users.length === 0 ?
+                        <span className="text-header">There is no user</span>
+                        : <span className="text-header">{users.length} Users Loaded</span>
+                    )
+                }
+                <div className="table-responsive">
                     <table className="table table-bordered table-dark user-table">
                         <thead>
                             <tr>
@@ -83,20 +80,30 @@ export function Users() {
                             </tr>
                         </thead>
                         <tbody>
-                            {isLoading ? (<h1>All Users Loading...<Loader /></h1>) : (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="4">All Users Loading...<Loader /></td>
+                                </tr>
+                            ) : (
                                 users.length > 0 ? (
-                                    <>
-                                        {users.map((user, index) => (
-                                            <tr key={index}>
-                                                <td data-label>{user._id}</td>
-                                                <td data-label>{user.name}</td>
-                                                <td data-label>{user.email}</td>
-                                                <td data-label>{user.isAdmin ? <h1><Tag color="green">Administrator</Tag></h1> : <h1><Tag color="blue">Booking.Football Member</Tag></h1>}</td>
-                                                <hr />
-                                            </tr>
-                                        ))}
-                                    </>
-                                ) : (<h1>No Data Load</h1>)
+                                    users.map((user, index) => (
+                                        <tr key={index}>
+                                            <td data-label="">{user.id}</td>
+                                            <td data-label="">{user.name}</td>
+                                            <td data-label="">{user.email}</td>
+                                            <td data-label="">
+                                                {user.isAdmin ?
+                                                    <Tag color="green">Administrator</Tag>
+                                                    : <Tag color="blue">Booking.Football Member</Tag>
+                                                }
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4"><span>No Data Load</span></td>
+                                    </tr>
+                                )
                             )}
                         </tbody>
                     </table>
@@ -119,7 +126,7 @@ export function Bookings() {
             try {
                 setIsLoading(true);
                 const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/getAllBookings`);
-                setBookings(response.data);
+                setBookings(response.data || []);
                 setIsLoading(false);
             } catch (error) {
                 console.error(error);
@@ -133,8 +140,14 @@ export function Bookings() {
     return (
         <div className="row">
             <div className="col-md">
-                {isLoading ? <h1 className="text-header"><Loader /></h1> : (bookings.length <= 0 ? <h1 className="text-header">There is no booking</h1> : <h1 className="text-header"> {bookings.length} Bookings Loaded </h1>)}
-                <div div className="table-responsive" >
+                {isLoading ?
+                    <span className="text-header"><Loader /></span>
+                    : (bookings.length === 0 ?
+                        <span className="text-header">There is no booking</span>
+                        : <span className="text-header">{bookings.length} Bookings Loaded</span>
+                    )
+                }
+                <div className="table-responsive">
                     <table className="table table-bordered table-dark booking-table">
                         <thead>
                             <tr>
@@ -148,23 +161,30 @@ export function Bookings() {
                             </tr>
                         </thead>
                         <tbody>
-                            {isLoading ? (<h1>All Bookings Loading...<Loader /></h1>) : (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="7">All Bookings Loading...<Loader /></td>
+                                </tr>
+                            ) : (
                                 bookings.length > 0 ? (
-                                    <>
-                                        {bookings.map((booking, index) => (
-                                            <tr key={index}>
-                                                <td data-label>{booking._id}</td>
-                                                <td data-label>{booking.transactionId}</td>
-                                                <td data-label>{booking.userId}</td>
-                                                <td data-label>{booking.court}</td>
-                                                <td data-label>{booking.startDate} to {booking.endDate}</td>
-                                                <td data-label>${booking.totalAmount}</td>
-                                                <td data-label>{booking.status === "Booked" ? <Tag color="blue">CONFIRMED</Tag> : (<Tag color="red">CANCELLED</Tag>)}</td>
-                                                <hr />
-                                            </tr>
-                                        ))}
-                                    </>
-                                ) : (<h1>No Data Loaded</h1>)
+                                    bookings.map((booking, index) => (
+                                        <tr key={index}>
+                                            <td data-label="">{booking.id}</td>
+                                            <td data-label="">{booking.transactionid}</td>
+                                            <td data-label="">{booking.userid}</td>
+                                            <td data-label="">{booking.court}</td>
+                                            <td data-label="">{booking.date}</td>
+                                            <td data-label="">${booking.totalamount}</td>
+                                            <td data-label="">
+                                                {booking.status === "Confirmed" ? <Tag color="blue">CONFIRMED</Tag> : <Tag color="red">CANCELLED</Tag>}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7"><span>No Data Loaded</span></td>
+                                    </tr>
+                                )
                             )}
                         </tbody>
                     </table>
@@ -189,7 +209,7 @@ export function Courts() {
             try {
                 setIsLoading(true);
                 const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/courts/getAllCourts`);
-                setCourts(response.data);
+                setCourts(response.data || []);
                 setIsLoading(false);
             } catch (error) {
                 console.error(error);
@@ -199,7 +219,6 @@ export function Courts() {
         }
         fetchData();
     }, [])
-
 
     // Admin - Delete the current Court
     async function deleteCourt(id) {
@@ -217,7 +236,7 @@ export function Courts() {
                 text: 'Court has been successfully deleted!',
                 icon: 'success',
                 confirmButtonText: 'Close'
-            }).then(response => {
+            }).then(() => {
                 window.location.href = "/admin";
             });
 
@@ -237,12 +256,17 @@ export function Courts() {
         }
     }
 
-
     return (
         <div className="row">
             <div className="col-md">
-                {isLoading ? <h1 className="text-header"><Loader /></h1> : (courts.length <= 0 ? <h1 className="text-header">There is no court</h1> : <h1 className="text-header"> {courts.length} Courts Loaded </h1>)}
-                <div div className="table-responsive" >
+                {isLoading ?
+                    <span className="text-header"><Loader /></span>
+                    : (courts.length === 0 ?
+                        <span className="text-header">There is no court</span>
+                        : <span className="text-header">{courts.length} Courts Loaded</span>
+                    )
+                }
+                <div className="table-responsive">
                     <table className="table table-bordered table-dark court-table">
                         <thead>
                             <tr>
@@ -258,25 +282,16 @@ export function Courts() {
                             </tr>
                         </thead>
                         <tbody>
-                            {isLoading ? (<h1>All Courts Loading...<Loader /></h1>) : (
+                            {isLoading ? (
+                                <tr><td colSpan="9">All Courts Loading...<Loader /></td></tr>
+                            ) : (
                                 courts.length > 0 ? (
-                                    <>
-                                        {courts.map((court, index) => (
-                                            <tr key={index}>
-                                                <td data-label>{currentUser._id}</td>
-                                                <td data-label>{court._id}</td>
-                                                <td data-label>{court.name}</td>
-                                                <td data-label>{court.type}</td>
-                                                <td data-label>{court.price}</td>
-                                                <td data-label>{court.location}</td>
-                                                <td data-label>{court.currentBookings.length} booked</td>
-                                                <td data-label>{court.maxPlayers}</td>
-                                                <td data-label><button className="btn btn-primary delete-btn" onClick={() => deleteCourt(court._id)}>Delete Court</button></td>
-                                                <hr />
-                                            </tr>
-                                        ))}
-                                    </>
-                                ) : (<h1>No Data Load</h1>)
+                                    courts.map((court, index) => (
+                                        <tr key={index}><td data-label="">{currentUser._id}</td><td data-label="">{court._id || court.id}</td><td data-label="">{court.name}</td><td data-label="">{court.type}</td><td data-label="">{court.price}</td><td data-label="">{court.location}</td><td data-label="">{court.currentBookings?.length || 0} booked</td><td data-label="">{court.maxPlayers}</td><td data-label=""><button className="btn btn-primary delete-btn" onClick={() => deleteCourt(court._id || court.id)}>Delete Court</button></td></tr>
+                                    ))
+                                ) : (
+                                    <tr><td colSpan="9"><span>No Data Load</span></td></tr>
+                                )
                             )}
                         </tbody>
                     </table>
@@ -327,7 +342,11 @@ export function AddCourt() {
 
         try {
             setIsLoading(true);
-            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/courts/addCourt`, newCourt);
+            const response = await axios.post(
+                `${process.env.REACT_APP_BACKEND_URL}/api/courts/addCourt`,
+                { ...newCourt, imgURLs: JSON.stringify(newCourt.imgURLs) },
+                { headers: { "Content-Type": "application/json" } }
+            );
             const addedCourt = response.data;
             setIsLoading(false);
 
@@ -336,7 +355,7 @@ export function AddCourt() {
                 text: 'New Court has been successfully added!',
                 icon: 'success',
                 confirmButtonText: 'Close'
-            }).then(response => {
+            }).then(() => {
                 window.location.href = "/home";
             });
 
@@ -358,15 +377,14 @@ export function AddCourt() {
         }
     }
 
-
     return (
         <div className="row add-court-content">
             <div className="col-md-5">
-                <input type="text" className="form-control add-court-form" placeholder="Court Name" value={name} onChange={(e) => { setName(e.target.value) }} />
-                <input type="text" className="form-control add-court-form" placeholder="Location" value={location} onChange={(e) => { setLocation(e.target.value) }} />
-                <input type="number" className="form-control add-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => { setMaxPlayers(e.target.value) }} />
-                <input type="number" className="form-control add-court-form" placeholder="Price" value={price} onChange={(e) => { setPrice(e.target.value) }} />
-                <select className="form-control add-court-form" value={type} onChange={(e) => { setType(e.target.value) }}>
+                <input type="text" className="form-control add-court-form" placeholder="Court Name" value={name} onChange={(e) => setName(e.target.value)} />
+                <input type="text" className="form-control add-court-form" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                <input type="number" className="form-control add-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} />
+                <input type="number" className="form-control add-court-form" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
+                <select className="form-control add-court-form" value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="">Court Type</option>
                     <option value="Indoor">Indoor</option>
                     <option value="Outdoor">Outdoor</option>
@@ -374,10 +392,10 @@ export function AddCourt() {
             </div>
 
             <div className="col-md-5">
-                <input type="text" className="form-control add-court-form" placeholder="Description" value={description} onChange={(e) => { setDescription(e.target.value) }} />
-                <input type="text" className="form-control add-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => { setImgURL1(e.target.value) }} />
-                <input type="text" className="form-control add-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => { setImgURL2(e.target.value) }} />
-                <input type="text" className="form-control add-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => { setImgURL3(e.target.value) }} />
+                <input type="text" className="form-control add-court-form" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <input type="text" className="form-control add-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => setImgURL1(e.target.value)} />
+                <input type="text" className="form-control add-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => setImgURL2(e.target.value)} />
+                <input type="text" className="form-control add-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => setImgURL3(e.target.value)} />
                 <div className="text-right">
                     <button className="btn btn-primary add-btn" onClick={addCourt}>Add Court</button>
                 </div>
@@ -451,7 +469,7 @@ export function UpdateCourt() {
                 text: 'Court has been successfully updated!',
                 icon: 'success',
                 confirmButtonText: 'Close'
-            }).then(response => {
+            }).then(() => {
                 window.location.href = "/admin";
             });
 
@@ -460,7 +478,6 @@ export function UpdateCourt() {
             setLocation("");
             setMaxPlayers("");
             setPrice("");
-
             setType("");
             setDescription("");
             setImgURL1("");
@@ -468,7 +485,6 @@ export function UpdateCourt() {
             setImgURL3("");
 
             const updatedCourt = await response.json();
-
 
         } catch (error) {
             console.error('There was a problem with the fetch operation: ' + error.message);
@@ -478,34 +494,32 @@ export function UpdateCourt() {
                 text: 'Please check the court ID! There was a problem updating the court.',
                 icon: 'error',
                 confirmButtonText: 'Close'
-            }).then(response => {
+            }).then(() => {
                 window.location.href = "/admin";
             });
-
         }
     }
-
 
     return (
         <div className="row update-court-content">
             <div className="col-md-5">
-                <input type="text" className="form-control update-court-form" placeholder="Court ID" value={courtId} onChange={(e) => { setCourtId(e.target.value) }} />
-                <input type="text" className="form-control update-court-form" placeholder="Court Name" value={name} onChange={(e) => { setName(e.target.value) }} />
-                <input type="text" className="form-control update-court-form" placeholder="Location" value={location} onChange={(e) => { setLocation(e.target.value) }} />
-                <input type="number" className="form-control update-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => { setMaxPlayers(e.target.value) }} />
-                <input type="number" className="form-control update-court-form" placeholder="Price" value={price} onChange={(e) => { setPrice(e.target.value) }} />
+                <input type="text" className="form-control update-court-form" placeholder="Court ID" value={courtId} onChange={(e) => setCourtId(e.target.value)} />
+                <input type="text" className="form-control update-court-form" placeholder="Court Name" value={name} onChange={(e) => setName(e.target.value)} />
+                <input type="text" className="form-control update-court-form" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                <input type="number" className="form-control update-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} />
+                <input type="number" className="form-control update-court-form" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
 
             <div className="col-md-5">
-                <select className="form-control add-court-form" value={type} onChange={(e) => { setType(e.target.value) }}>
+                <select className="form-control add-court-form" value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="">Court Type</option>
                     <option value="Indoor">Indoor</option>
                     <option value="Outdoor">Outdoor</option>
                 </select>
-                <input type="text" className="form-control update-court-form" placeholder="Description" value={description} onChange={(e) => { setDescription(e.target.value) }} />
-                <input type="text" className="form-control update-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => { setImgURL1(e.target.value) }} />
-                <input type="text" className="form-control update-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => { setImgURL2(e.target.value) }} />
-                <input type="text" className="form-control update-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => { setImgURL3(e.target.value) }} />
+                <input type="text" className="form-control update-court-form" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+                <input type="text" className="form-control update-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => setImgURL1(e.target.value)} />
+                <input type="text" className="form-control update-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => setImgURL2(e.target.value)} />
+                <input type="text" className="form-control update-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => setImgURL3(e.target.value)} />
                 <div className="text-right">
                     <button className="btn btn-primary update-btn" onClick={() => updateCourt(courtId)}>Update Court</button>
                 </div>
