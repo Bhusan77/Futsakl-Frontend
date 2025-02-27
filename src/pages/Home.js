@@ -34,7 +34,6 @@ const Home = () => {
                 const data = await response.json();
 
                 // Ensure data is an array, otherwise fallback to an empty array
-                console.log("yo aayo data", data);
                 const courtsArray = Array.isArray(data)
                     ? data.map(court => ({
                         ...court,

@@ -99,6 +99,7 @@ const Booking = () => {
 
         // Pass a plain string for courtName and the needed fields only.
         const bookingDetails = {
+            court: minimalCourt,
             courtName: minimalCourt.name,
             courtId: minimalCourt._id,
             userId: currentUser._id,
@@ -179,7 +180,7 @@ const Booking = () => {
                             <b>
                                 <h1>Amount</h1>
                                 <hr />
-                                <p>Total Amount : ${totalAmount}</p>
+                                <p>Total Amount : Nrs.{totalAmount}</p>
                             </b>
                         </div>
                         <div className="btn-area">

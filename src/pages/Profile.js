@@ -105,7 +105,7 @@ export const MyBookings = () => {
                                         <b>Booking Date and Time</b> : {new Date(booking.date).toLocaleString()}
                                     </p>
                                     <p><b>Max Players</b> : {booking.maxplayers || 'N/A'} people</p>
-                                    <p><b>Paid Amount</b> : ${booking.totalamount}</p>
+                                    <p><b>Paid Amount</b> : Nrs.{booking.totalamount}</p>
                                     <p>
                                         <b>Booking Status</b> :
                                         {booking.status === "Confirmed" ? (

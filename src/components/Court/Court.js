@@ -34,7 +34,7 @@ const Courts = ({ court, date }) => {
 
             <div className="col-md-7">
                 <h1>{court.name}</h1>
-                <p>Price : ${court.price}</p>
+                <p>Price : Nrs.{court.price}</p>
                 <p>Max Players : {court.maxPlayers} people</p>
                 <p>Location : {court.location}</p>
 
