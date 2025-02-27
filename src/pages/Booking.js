@@ -4,34 +4,46 @@ import axios from "axios";
 import "./Booking.css";
 import Loader from "../components/Loader/Loader";
 import Error from "../components/Error/Error";
-import StripeCheckout from 'react-stripe-checkout';
-import moment from 'moment';
-import Swal from 'sweetalert2'
-
+import moment from "moment";
+import Swal from "sweetalert2";
 
 const Booking = () => {
-    // useParams
-    const { courtId, startDate, endDate } = useParams();
-
-    // useState
+    // Destructure 'date' instead of startDate and endDate
+    const { courtId, date } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState();
     const [court, setCourt] = useState();
     const [totalAmount, setTotalAmount] = useState(0);
+    const [dummyQR, setDummyQR] = useState(null);
+    const [bookingId, setBookingId] = useState(null);
 
-    // Convert startDate and endDate to moment objects
-    const start = moment(startDate, 'DD-MM-YYYY HH:mm');
-    const end = moment(endDate, 'DD-MM-YYYY HH:mm');
+    // Use the single date parameter
+    const bookingDate = moment(date, 'DD-MM-YYYY HH:mm');
+    const displayDate = bookingDate.format('dddd, DD-MM-YYYY, hh:mm A');
 
-    const startTime = moment(startDate, 'DD-MM-YYYY HH:mm').format('hh:mm A');
-    const endTime = moment(endDate, 'DD-MM-YYYY HH:mm').format('hh:mm A');
+    // Helper to normalize a court from backend data.
+    const normalizeCourt = (court) => {
+        const id = court.id || court._id || court.ID || court.courtId;
+        if (!id) {
+            console.error("Court id not found in response:", court);
+        }
+        return {
+            ...court,
+            _id: id, // use the first found id
+            imgURLs: Array.isArray(court.imgurls)
+                ? court.imgurls
+                : (court.imgurls ? JSON.parse(court.imgurls) : []),
+            currentBookings: Array.isArray(court.currentbookings)
+                ? court.currentbookings
+                : (court.currentbookings ? JSON.parse(court.currentbookings) : [])
+        }
+    };
 
-    const totalHours = moment.duration(end.diff(start)).asHours();
-
-    const displayDate = moment(startDate, 'DD-MM-YYYY HH:mm').format('dddd, DD-MM-YYYY, hh:mm A');
+    const currentUser = localStorage.getItem("currentUser")
+        ? JSON.parse(localStorage.getItem("currentUser"))
+        : null;
 
     useEffect(() => {
-
         if (!localStorage.getItem("currentUser")) {
             Swal.fire({
                 title: 'Error',
@@ -48,18 +60,14 @@ const Booking = () => {
             try {
                 setIsLoading(true);
                 const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/courts/getCourtById`, { courtId });
-
                 if (response.status !== 200) {
                     throw new Error('Network response was not OK');
                 }
-
-                setCourt(response.data);
+                const normalizedCourt = normalizeCourt(response.data);
+                setCourt(normalizedCourt);
+                // Calculate total amount based on your pricing logic if needed
+                setTotalAmount(Number(normalizedCourt.price));
                 setIsLoading(false);
-
-                // Calculate totalAmount here after court is set
-                const totalHours = moment.duration(end.diff(start)).asHours();
-                setTotalAmount(totalHours * response.data.price);
-
             } catch (error) {
                 setError(true);
                 setIsLoading(false);
@@ -69,41 +77,80 @@ const Booking = () => {
         fetchData();
     }, [courtId]);
 
+    async function payNow() {
+        const formattedDate = moment(date, 'DD-MM-YYYY HH:mm').format('YYYY-MM-DD HH:mm:ss');
 
-    async function payNow(token) {
-        const bookingDetails = {
-            court,
-            userId: JSON.parse(localStorage.getItem("currentUser"))._id,
-            startDate,
-            endDate,
-            maxPlayers: court.maxPlayers,
-            totalHours,
-            totalAmount,
-            token,
+        // Ensure that the court state is available.
+        if (!court) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Court details not loaded',
+                icon: 'error',
+                confirmButtonText: 'Close'
+            });
+            return;
         }
+
+        // Build a minimal court object.
+        const minimalCourt = {
+            _id: court._id || courtId,
+            name: court.name || "Default Court Name"
+        };
+
+        // Pass a plain string for courtName and the needed fields only.
+        const bookingDetails = {
+            courtName: minimalCourt.name,
+            courtId: minimalCourt._id,
+            userId: currentUser._id,
+            date: formattedDate,
+            maxPlayers: court.maxPlayers,
+            totalAmount
+        };
+
         try {
             setIsLoading(true);
             const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/bookingCourt`, bookingDetails);
-
             setIsLoading(false);
-
+            setDummyQR(response.data.dummyQR);
+            setBookingId(response.data.bookingId);
             Swal.fire({
-                title: 'Successful',
-                text: 'Your court has been successfully booked!',
-                icon: 'success',
-                confirmButtonText: 'Close'
-            }).then(response => {
-                window.location.href = "/profile"
+                title: 'QR Code Generated',
+                text: 'Please scan the QR code and press Confirm Payment once paid.',
+                icon: 'info',
+                confirmButtonText: 'OK'
             });
-
         } catch (error) {
             Swal.fire({
                 title: 'Error',
                 text: 'Error in booking',
                 icon: 'error',
                 confirmButtonText: 'Close'
-            })
+            });
             console.error('Error booking court:', error.response.data);
+        }
+    }
+
+    async function confirmPayment() {
+        try {
+            setIsLoading(true);
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/confirmPayment`, { bookingId, courtId });
+            setIsLoading(false);
+            Swal.fire({
+                title: 'Successful',
+                text: 'Your booking has been confirmed!',
+                icon: 'success',
+                confirmButtonText: 'Close'
+            }).then(() => {
+                window.location.href = "/profile";
+            });
+        } catch (error) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Error in confirming payment',
+                icon: 'error',
+                confirmButtonText: 'Close'
+            });
+            console.error('Error confirming booking:', error.response.data);
         }
     }
 
@@ -114,48 +161,45 @@ const Booking = () => {
                     <div className="col-md-5">
                         <h1>{court.name}</h1>
                         <hr />
-                        <img src={court.imgURLs[1]} className="small-img" />
+                        <img src={court.imgURLs[1]} className="small-img" alt="Court" />
                         <p>Location : {court.location}</p>
                     </div>
-
                     <div className="col-md-5">
                         <div className="payment-section">
                             <h1>Booking Details</h1>
                             <hr />
                             <b>
-                                <p>Name : {JSON.parse(localStorage.getItem("currentUser")) ? JSON.parse(localStorage.getItem("currentUser")).name : "Guest"}</p>
+                                <p>Name : {currentUser && currentUser.name ? currentUser.name : "Guest"}</p>
                                 <p>Date : {displayDate}</p>
-                                <p>Play Time : {startTime} to {endTime}</p>
                                 <p>Max Players : {court.maxPlayers} people</p>
                                 <p className="p-text">{court.description}</p>
                             </b>
                         </div>
-
                         <div className="payment-section">
                             <b>
                                 <h1>Amount</h1>
                                 <hr />
-                                <p>Total hours : {totalHours}</p>
-                                <p>Per Hour : ${court.price}</p>
                                 <p>Total Amount : ${totalAmount}</p>
                             </b>
                         </div>
-
                         <div className="btn-area">
-                            <StripeCheckout
-                                token={payNow}
-                                stripeKey={process.env.REACT_APP_StripeKey}
-                                currency="NZD"
-                                amount={totalAmount * 100}
-                            >
-                                <button className="btn btn-primary">Pay Now</button>
-                            </StripeCheckout>
+                            {!dummyQR ? (
+                                <button className="btn btn-primary" onClick={payNow}>Generate QR Code</button>
+                            ) : (
+                                <>
+                                    <div>
+                                        <p>Scan this QR code:</p>
+                                        <img src={dummyQR} alt="QR Code" style={{ width: '200px' }} />
+                                    </div>
+                                    <button className="btn btn-success m-2" onClick={confirmPayment}>Confirm Payment</button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
             ) : (<Error />)}
         </div>
     );
-}
+};
 
 export default Booking;

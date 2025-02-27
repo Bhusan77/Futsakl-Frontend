@@ -17,22 +17,23 @@ const Login = () => {
             return;
         }
 
-        const user = {
-            email,
-            password,
-        }
+        const user = { email, password };
+
         try {
             setIsLoading(true);
             const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/users/login`, user);
-            const registeredAccount = response.data;
             setIsLoading(false);
 
+            const registeredAccount = response.data;
             localStorage.setItem("currentUser", JSON.stringify(registeredAccount));
             window.location.href = "/profile";
-
         } catch (error) {
             setIsLoading(false);
-            setError(true);
+            // Use the backend error message if available
+            const errMsg = error.response && error.response.data && error.response.data.message
+                ? error.response.data.message
+                : "Invalid Credentials";
+            setError(errMsg);
         }
     }
 

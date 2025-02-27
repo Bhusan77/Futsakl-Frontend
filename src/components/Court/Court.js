@@ -4,22 +4,18 @@ import "./Court.css";
 import { Link } from "react-router-dom";
 import Swal from 'sweetalert2'
 
-const Courts = ({ court, startDate, endDate }) => {
+const Courts = ({ court, date }) => {
     const [show, setShow] = useState(false);
 
-    const handleClose = () => {
-        setShow(false)
-    };
-    const handleShow = () => {
-        setShow(true)
-    };
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
-    const isBookingAvailable = startDate && endDate;
+    // Use the single date prop to determine availability
+    const isBookingAvailable = Boolean(date);
 
     const handleBookNowClick = (event) => {
         if (!isBookingAvailable) {
             event.preventDefault();
-
             Swal.fire({
                 title: 'Sorry!',
                 text: 'Please select a date and time range first.',
@@ -43,7 +39,7 @@ const Courts = ({ court, startDate, endDate }) => {
                 <p>Location : {court.location}</p>
 
                 <div className="view-details">
-                    <Link to={isBookingAvailable ? `/book/${court._id}/${startDate}/${endDate}` : '#'} onClick={handleBookNowClick}>
+                    <Link to={isBookingAvailable ? `/book/${court._id}/${date}` : '#'} onClick={handleBookNowClick}>
                         <button className="btn btn-primary m-2">Book Now</button>
                     </Link>
                     <button className="btn btn-primary" onClick={handleShow}>View Details</button>
@@ -60,7 +56,7 @@ const Courts = ({ court, startDate, endDate }) => {
                         {court.imgURLs.map((img, index) => {
                             return (
                                 <Carousel.Item key={index}>
-                                    <img className="d-block w-100 detail-img" src={img} />
+                                    <img className="d-block w-100 detail-img" src={img} alt={`${court.name} ${index + 1}`} />
                                     <Carousel.Caption>
                                         <h3>{court.name}</h3>
                                     </Carousel.Caption>
@@ -72,7 +68,7 @@ const Courts = ({ court, startDate, endDate }) => {
                 </Modal.Body>
 
                 <Modal.Footer>
-                    <Link to={`/book/${court._id}/${startDate}/${endDate}`}>
+                    <Link to={`/book/${court._id}/${date}`}>
                         <button className="btn btn-primary m-2" onClick={handleBookNowClick}>Book Now</button>
                     </Link>
 

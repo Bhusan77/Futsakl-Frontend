@@ -9,7 +9,7 @@ import Swal from 'sweetalert2'
 const Register = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-    const[number,setNumber]=useState("");
+    const [number, setNumber] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [success, setSuccess] = useState("");
@@ -17,7 +17,7 @@ const Register = () => {
     const [IsLoading, setIsLoading] = useState(false);
     const [error, setError] = useState();
 
-    function registerUser() {
+    const registerUser = async () => {
         if (password === confirmPassword) {
             const user = {
                 name,
@@ -28,7 +28,7 @@ const Register = () => {
             }
             try {
                 setIsLoading(true);
-                const register = axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/users/register`, user).data;
+                const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/users/register`, user);
                 setIsLoading(false);
                 setSuccess(true);
 
@@ -37,7 +37,7 @@ const Register = () => {
                     text: 'Your account has been successfully registered!',
                     icon: 'success',
                     confirmButtonText: 'OK'
-                }).then(response => {
+                }).then(() => {
                     window.location.href = "/login";
                 });
 
@@ -46,7 +46,6 @@ const Register = () => {
                 setNumber("");
                 setPassword("");
                 setConfirmPassword("");
-
             } catch (error) {
                 setIsLoading(false);
                 setError(true);
@@ -58,7 +57,7 @@ const Register = () => {
                 text: 'Passwords are not matched! Please review your password',
                 icon: 'error',
                 confirmButtonText: 'Close'
-            })
+            });
         }
     }
 
@@ -110,10 +109,6 @@ const Register = () => {
                             onChange={(event) => { setConfirmPassword(event.target.value) }}
                             required
                         />
-
-
-
-
 
                         <button className="register-button" onClick={registerUser}>Register</button>
 

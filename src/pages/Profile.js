@@ -44,7 +44,6 @@ export const MyBookings = () => {
     const [bookings, setBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState();
-
     const user = JSON.parse(localStorage.getItem("currentUser"));
 
     useEffect(() => {
@@ -52,8 +51,8 @@ export const MyBookings = () => {
             try {
                 setIsLoading(true);
                 const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/getBookingsByUserId`, { userId: user._id });
-
-                setBookings(response.data.reverse()); // Reverse the array here for now need to fix descending order later
+                console.log("Bookings response:", response.data);
+                setBookings(response.data.reverse());
                 setIsLoading(false);
             } catch (error) {
                 console.error(error);
@@ -62,21 +61,18 @@ export const MyBookings = () => {
             }
         }
         fetchData();
-    }, []);
+    }, [user._id]);
 
     async function cancelBooking(bookingId, courtId) {
         try {
             setIsLoading(true);
-            const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/cancelBooking/`, { bookingId, courtId });
-
-            console.log(response.data);
-
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/bookings/cancelBooking/`, { bookingId, courtId });
             Swal.fire({
                 title: 'Successful',
                 text: 'Your court has been successfully cancelled!',
                 icon: 'success',
                 confirmButtonText: 'Close'
-            }).then(response => {
+            }).then(() => {
                 window.location.reload();
             });
         } catch (error) {
@@ -85,7 +81,7 @@ export const MyBookings = () => {
                 text: 'Error in cancel',
                 icon: 'error',
                 confirmButtonText: 'Close'
-            })
+            });
             console.error('Error booking court:', error.response.data);
         }
     }
@@ -100,20 +96,33 @@ export const MyBookings = () => {
                             {bookings.map((booking, index) => (
                                 <div key={index}>
                                     <hr />
-                                    <p><b>Booking ID</b> : {booking._id}</p>
-                                    <p><b>Transaction ID</b> : {booking.transactionId}</p>
-                                    <p><b>User ID</b> : {booking.userId}</p>
-                                    <p><b>Court Name</b> : {booking.court}</p>
-                                    <p><b>Booking Date and Time</b> : {booking.startDate} to {booking.endDate}</p>
-                                    <p><b>Max Players</b> : {booking.maxPlayers} people</p>
-                                    <p><b>Paid Amount</b> : ${booking.totalAmount}</p>
-                                    <p><b>Booking Status</b> : {booking.status === "Booked" ? <Tag color="blue">CONFIRMED</Tag> : (<Tag color="red">CANCELLED</Tag>)}</p>
+                                    <p><b>Booking ID</b> : {booking.id}</p>
+                                    <p><b>Transaction ID</b> : {booking.transactionid}</p>
+                                    <p><b>User ID</b> : {booking.userid}</p>
+                                    {/* Directly display the court name instead of parsing JSON */}
+                                    <p><b>Court Name</b> : {booking.court || ''}</p>
+                                    <p>
+                                        <b>Booking Date and Time</b> : {new Date(booking.date).toLocaleString()}
+                                    </p>
+                                    <p><b>Max Players</b> : {booking.maxplayers || 'N/A'} people</p>
+                                    <p><b>Paid Amount</b> : ${booking.totalamount}</p>
+                                    <p>
+                                        <b>Booking Status</b> :
+                                        {booking.status === "Confirmed" ? (
+                                            <Tag color="blue">CONFIRMED</Tag>
+                                        ) : booking.status === "Pending" ? (
+                                            <Tag color="orange">PENDING</Tag>
+                                        ) : (
+                                            <Tag color="red">CANCELLED</Tag>
+                                        )}
+                                    </p>
                                     <div className="text-right">
                                         {booking.status !== "Cancelled" && (
                                             <button
                                                 className="btn btn-primary cancel-btn"
-                                                onClick={() => { cancelBooking(booking._id, booking.courtId) }}
-                                            >Cancel booking
+                                                onClick={() => { cancelBooking(booking.id, booking.courtid) }}
+                                            >
+                                                Cancel booking
                                             </button>
                                         )}
                                     </div>

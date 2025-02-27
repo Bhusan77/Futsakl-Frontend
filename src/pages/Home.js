@@ -4,6 +4,7 @@ import Court from "../components/Court/Court";
 import Loader from "../components/Loader/Loader";
 import { DatePicker } from 'antd';
 import Swal from 'sweetalert2'
+import { Link } from 'react-router-dom';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -12,31 +13,18 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-
-const { RangePicker } = DatePicker;
-
 const Home = () => {
     // State management
     const [courts, setCourts] = useState([]); // The original list of courts fetched from the API
     const [IsLoading, setIsLoading] = useState(true);
     const [error, setError] = useState();
 
-    const [startDate, setStartDate] = useState();
-    const [endDate, setEndDate] = useState();
+    const [date, setDate] = useState(null);
 
     const [searchCourt, setSearchCourt] = useState("");
     const [typeCourt, setTypeCourt] = useState("all");
 
     const [filteredCourts, setFilteredCourts] = useState([]); // This is used to store the list of courts that match the search and type filters
-
-    useEffect(() => {
-        Swal.fire({
-            title: 'IMPORTANT',
-            text: 'It may take a while to fetch court',
-            icon: 'info',
-            confirmButtonText: 'OK'
-        });
-    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -46,7 +34,19 @@ const Home = () => {
                 const data = await response.json();
 
                 // Ensure data is an array, otherwise fallback to an empty array
-                const courtsArray = Array.isArray(data) ? data : [];
+                console.log("yo aayo data", data);
+                const courtsArray = Array.isArray(data)
+                    ? data.map(court => ({
+                        ...court,
+                        _id: court.id, // alias id as _id for frontend components if needed
+                        imgURLs: Array.isArray(court.imgurls)
+                            ? court.imgurls // already an array
+                            : (court.imgurls ? JSON.parse(court.imgurls) : []),
+                        currentBookings: Array.isArray(court.currentbookings)
+                            ? court.currentbookings // already an array
+                            : (court.currentbookings ? JSON.parse(court.currentbookings) : [])
+                    }))
+                    : [];
 
                 setCourts(courtsArray);
                 setFilteredCourts(courtsArray);
@@ -60,56 +60,9 @@ const Home = () => {
         fetchData();
     }, []);
 
-    function SelectedTime(value, dateString) {
-        setStartDate(dateString[0]); // 05-07-2024 10:00
-        setEndDate(dateString[1]);
-
-        // Check if the selected time range is already booked
-        const selectedStart = new Date(dateString[0]);
-        const selectedEnd = new Date(dateString[1]);
-
-        let availableCourts = [...courts];
-
-        const startHours = selectedStart.getHours(); // 18
-        const startMinutes = selectedStart.getMinutes().toString().padStart(2, '0'); // '00' 
-
-        const endHours = selectedEnd.getHours(); // 20 
-        const endMinutes = selectedEnd.getMinutes().toString().padStart(2, '0'); //'30'
-
-        for (let court of courts) {
-            for (let booking of court.currentBookings) {
-                const bookingStart = new Date(booking.startDate);
-                const bookingEnd = new Date(booking.endDate);
-
-                // Check if the selected time range overlaps with the booking time range
-                if ((selectedStart >= bookingStart && selectedStart <= bookingEnd) ||
-                    (selectedEnd >= bookingStart && selectedEnd <= bookingEnd) ||
-                    (selectedStart <= bookingStart && selectedEnd >= bookingEnd)) {
-
-                    Swal.fire({
-                        title: 'Sorry!',
-                        text: `${court.name} is already booked between ${startHours}:${startMinutes} and ${endHours}:${endMinutes}. 
-                                \nPlease select the other time.`,
-                        icon: 'error',
-                        confirmButtonText: 'Close'
-                    });
-
-                    // Remove the court from the availableCourts array
-                    availableCourts = availableCourts.filter(c => c._id !== court._id);
-                }
-            }
-        }
-
-        if (availableCourts.length === courts.length) {
-            Swal.fire({
-                title: 'Confirmed',
-                text: 'The selected time range is available for all courts.',
-                icon: 'success',
-                confirmButtonText: 'Continue'
-            });
-        }
-
-        setCourts(availableCourts); // Update the state of the courts
+    function onDateChange(value, dateString) {
+        console.log("Selected date:", dateString);
+        setDate(dateString);
     }
 
     const disabledDate = (current) => {
@@ -171,16 +124,11 @@ const Home = () => {
         <div className="container">
             <div className="row main-row mt-5 bs">
                 <div className="col-md-4">
-                    <RangePicker
-                        disabledDate={disabledDate}
-                        showTime={{
-                            format: 'HH:mm',
-                            hideDisabledOptions: true,
-                            disabledHours: disabledHours,
-                            disabledMinutes: disabledMinutes,
-                        }}
+                    <DatePicker
+                        showTime={{ format: 'HH:mm' }}
                         format="DD-MM-YYYY HH:mm"
-                        onChange={SelectedTime}
+                        disabledDate={disabledDate}
+                        onChange={onDateChange}
                     />
                 </div>
 
@@ -211,12 +159,25 @@ const Home = () => {
                 {IsLoading ? (
                     <h1 className="loading-text">Courts Fetching...<Loader /></h1>
                 ) : filteredCourts.length === 0 ? (
-                    <h1 className="loading-text"></h1>
+                    <h1 className="loading-text">No courts available</h1>
                 ) : (
                     filteredCourts.map((court, index) => {
                         return (
                             <div key={index} className="col-md-9 mt-3">
-                                <Court court={court} startDate={startDate} endDate={endDate} />
+                                <Court court={court} date={date} />
+                                <Link to={date ? `/book/${court._id}/${date}` : '#'} onClick={(e) => {
+                                    if (!date) {
+                                        e.preventDefault();
+                                        Swal.fire({
+                                            title: 'Sorry!',
+                                            text: 'Please select a date and time range first.',
+                                            icon: 'error',
+                                            confirmButtonText: 'Close'
+                                        });
+                                    }
+                                }}>
+                                    {/* <button className="btn btn-primary m-2">Book Now</button> */}
+                                </Link>
                             </div>
                         )
                     })
