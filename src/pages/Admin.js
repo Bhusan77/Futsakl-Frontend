@@ -408,26 +408,99 @@ export function AddCourt() {
 
 //// Admin - Update Court key="5"
 export function UpdateCourt() {
+    const [courts, setCourts] = useState([]);
     const [courtId, setCourtId] = useState("");
     const [name, setName] = useState("");
     const [location, setLocation] = useState("");
     const [maxPlayers, setMaxPlayers] = useState("");
     const [price, setPrice] = useState("");
     const [type, setType] = useState("");
-
     const [description, setDescription] = useState("");
     const [imgURL1, setImgURL1] = useState("");
     const [imgURL2, setImgURL2] = useState("");
     const [imgURL3, setImgURL3] = useState("");
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState();
 
+    // Fetch all courts for dropdown
     useEffect(() => {
-        Swal.fire({
-            title: 'IMPORTANT',
-            text: 'Please make sure the court ID!',
-            icon: 'info',
-            confirmButtonText: 'OK'
-        });
-    }, [])
+        const fetchCourts = async () => {
+            try {
+                setIsLoading(true);
+                const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/courts/getAllCourts`);
+                setCourts(response.data || []);
+                setIsLoading(false);
+            } catch (error) {
+                console.error(error);
+                setIsLoading(false);
+                setError(error);
+            }
+        };
+        fetchCourts();
+    }, []);
+
+    // Handle court selection change
+    const handleCourtSelection = async (e) => {
+        const selectedCourtId = e.target.value;
+        setCourtId(selectedCourtId);
+
+        if (!selectedCourtId) {
+            clearForm();
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            const response = await axios.post(
+                `${process.env.REACT_APP_BACKEND_URL}/api/courts/getCourtById`,
+                { courtId: selectedCourtId },
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            const courtData = response.data;
+
+            // Populate form fields with court data
+            setName(courtData.name || "");
+            setLocation(courtData.location || "");
+            setMaxPlayers(courtData.maxplayers || "");
+            setPrice(courtData.price || "");
+            setType(courtData.type || "");
+            setDescription(courtData.description || "");
+
+            // Handle image URLs from stored array
+            const imgURLs = Array.isArray(courtData.imgurls)
+                ? courtData.imgurls
+                : (typeof courtData.imgurls === 'string' ? JSON.parse(courtData.imgurls) : []);
+
+            setImgURL1(imgURLs[0] || "");
+            setImgURL2(imgURLs[1] || "");
+            setImgURL3(imgURLs[2] || "");
+
+            setIsLoading(false);
+        } catch (error) {
+            console.error("Error fetching court details:", error);
+            setIsLoading(false);
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to load court details.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    };
+
+    // Clear form fields
+    const clearForm = () => {
+        setName("");
+        setLocation("");
+        setMaxPlayers("");
+        setPrice("");
+        setType("");
+        setDescription("");
+        setImgURL1("");
+        setImgURL2("");
+        setImgURL3("");
+    };
 
     async function updateCourt(id) {
         if (!courtId || !name || !location || !maxPlayers || !price || !type || !description || !imgURL1 || !imgURL2 || !imgURL3) {
@@ -440,15 +513,15 @@ export function UpdateCourt() {
             return;
         }
 
-        const updateCourt = {
-            courtId,
+        // Format the data properly for the backend
+        const updateCourtData = {
             name,
             location,
             maxPlayers: parseInt(maxPlayers),
             price: parseInt(price),
             type,
             description,
-            imgURLs: [imgURL1, imgURL2, imgURL3],
+            imgURLs: JSON.stringify([imgURL1, imgURL2, imgURL3]), // Stringify the array
         }
 
         try {
@@ -457,7 +530,7 @@ export function UpdateCourt() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(updateCourt)
+                body: JSON.stringify(updateCourtData)
             });
 
             if (!response.ok) {
@@ -473,18 +546,8 @@ export function UpdateCourt() {
                 window.location.href = "/admin";
             });
 
+            clearForm();
             setCourtId("");
-            setName("");
-            setLocation("");
-            setMaxPlayers("");
-            setPrice("");
-            setType("");
-            setDescription("");
-            setImgURL1("");
-            setImgURL2("");
-            setImgURL3("");
-
-            const updatedCourt = await response.json();
 
         } catch (error) {
             console.error('There was a problem with the fetch operation: ' + error.message);
@@ -494,8 +557,6 @@ export function UpdateCourt() {
                 text: 'Please check the court ID! There was a problem updating the court.',
                 icon: 'error',
                 confirmButtonText: 'Close'
-            }).then(() => {
-                window.location.href = "/admin";
             });
         }
     }
@@ -503,27 +564,39 @@ export function UpdateCourt() {
     return (
         <div className="row update-court-content">
             <div className="col-md-5">
-                <input type="text" className="form-control update-court-form" placeholder="Court ID" value={courtId} onChange={(e) => setCourtId(e.target.value)} />
+                {isLoading && <Loader />}
+                <select
+                    className="form-control update-court-form"
+                    value={courtId}
+                    onChange={handleCourtSelection}
+                >
+                    <option value="">Select a court to update</option>
+                    {courts.map((court) => (
+                        <option key={court.id || court._id} value={court.id || court._id}>
+                            {court.name} - {court.location}
+                        </option>
+                    ))}
+                </select>
                 <input type="text" className="form-control update-court-form" placeholder="Court Name" value={name} onChange={(e) => setName(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} />
                 <input type="number" className="form-control update-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} />
                 <input type="number" className="form-control update-court-form" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
-            
-                    <div className="col-md-5">
-                <select className="form-control add-court-form" value={type} onChange={(e) => setType(e.target.value)}>
-                            <option value="">Court Type</option>
-                            <option value="Indoor">Futsal</option>
-                            <option value="Outdoor">Cricksal</option>
-                        </select>
+
+            <div className="col-md-5">
+                <select className="form-control update-court-form" value={type} onChange={(e) => setType(e.target.value)}>
+                    <option value="">Court Type</option>
+                    <option value="Indoor">Futsal</option>
+                    <option value="Outdoor">Cricksal</option>
+                </select>
                 <input type="text" className="form-control update-court-form" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => setImgURL1(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => setImgURL2(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => setImgURL3(e.target.value)} />
                 <div className="text-right">
                     <button className="btn btn-primary update-btn" onClick={() => updateCourt(courtId)}>Update Court</button>
-                        </div>
-                    </div>
+                </div>
+            </div>
         </div>
     )
 }
