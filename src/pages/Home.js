@@ -148,8 +148,8 @@ const Home = () => {
                         onChange={(event) => { filterByType(event.target.value) }}
                     >
                         <option value="all">All</option>
-                        <option value="indoor">Indoor</option>
-                        <option value="outdoor">Outdoor</option>
+                        <option value="indoor">Futsal</option>
+                        <option value="outdoor">Cricksal</option>
                     </select>
                 </div>
             </div>

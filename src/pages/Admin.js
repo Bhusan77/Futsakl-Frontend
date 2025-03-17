@@ -174,7 +174,7 @@ export function Bookings() {
                                             <td data-label="">{booking.userid}</td>
                                             <td data-label="">{booking.court}</td>
                                             <td data-label="">{booking.date}</td>
-                                            <td data-label="">${booking.totalamount}</td>
+                                            <td data-label="">Nrs.{booking.totalamount}</td>
                                             <td data-label="">
                                                 {booking.status === "Confirmed" ? <Tag color="blue">CONFIRMED</Tag> : <Tag color="red">CANCELLED</Tag>}
                                             </td>
@@ -386,8 +386,8 @@ export function AddCourt() {
                 <input type="number" className="form-control add-court-form" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
                 <select className="form-control add-court-form" value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="">Court Type</option>
-                    <option value="Indoor">Indoor</option>
-                    <option value="Outdoor">Outdoor</option>
+                    <option value="Indoor">Futsal</option>
+                    <option value="Outdoor">Cricksal</option>
                 </select>
             </div>
 
@@ -509,21 +509,21 @@ export function UpdateCourt() {
                 <input type="number" className="form-control update-court-form" placeholder="Max Players" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} />
                 <input type="number" className="form-control update-court-form" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
-
-            <div className="col-md-5">
+            
+                    <div className="col-md-5">
                 <select className="form-control add-court-form" value={type} onChange={(e) => setType(e.target.value)}>
-                    <option value="">Court Type</option>
-                    <option value="Indoor">Indoor</option>
-                    <option value="Outdoor">Outdoor</option>
-                </select>
+                            <option value="">Court Type</option>
+                            <option value="Indoor">Futsal</option>
+                            <option value="Outdoor">Cricksal</option>
+                        </select>
                 <input type="text" className="form-control update-court-form" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 1" value={imgURL1} onChange={(e) => setImgURL1(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 2" value={imgURL2} onChange={(e) => setImgURL2(e.target.value)} />
                 <input type="text" className="form-control update-court-form" placeholder="Image URL 3" value={imgURL3} onChange={(e) => setImgURL3(e.target.value)} />
                 <div className="text-right">
                     <button className="btn btn-primary update-btn" onClick={() => updateCourt(courtId)}>Update Court</button>
-                </div>
-            </div>
+                        </div>
+                    </div>
         </div>
     )
 }
